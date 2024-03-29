@@ -1,0 +1,193 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func read(param string) (MalValue, error) {
+	return ReadStr(param)
+}
+
+func eval(param MalValue, env *Env) (MalValue, error) {
+	switch p := param.(type) {
+	case MalList:
+		if len(p.Values) == 0 {
+			return param, nil
+		}
+
+		rawHead := p.Values[0]
+		rawArgs := p.Values[1:]
+		switch h := rawHead.(type) {
+		case MalSymbol:
+			switch h.Value {
+			case "def!":
+				if len(rawArgs) != 2 {
+					return nil, fmt.Errorf("wrong number of arguments")
+				}
+				key, ok := rawArgs[0].(MalSymbol)
+				if !ok {
+					return nil, fmt.Errorf("arg0 of def! must be MalSymbol, got %v", rawArgs[0])
+				}
+				val, err := eval(rawArgs[1], env)
+				if err != nil {
+					return nil, err
+				}
+				env.Set(key.Value, val)
+				return val, nil
+			case "let*":
+				if len(rawArgs) != 2 {
+					return nil, fmt.Errorf("wrong number of arguments")
+				}
+
+				bindings, ok := rawArgs[0].(MalList)
+				if !ok {
+					return nil, fmt.Errorf("arg0 of let* must be MalList, got %v", rawArgs[0])
+				}
+				if len(bindings.Values)%2 != 0 {
+					return nil, fmt.Errorf("bindings must be even, got %v", bindings)
+				}
+				newEnv := NewEnv(env, nil, nil)
+				for i := 0; i < len(bindings.Values); i += 2 {
+					key, ok := bindings.Values[i].(MalSymbol)
+					if !ok {
+						return nil, fmt.Errorf("binding key must be MalSymbol, got %v", bindings.Values[i])
+					}
+					val, err := eval(bindings.Values[i+1], newEnv)
+					if err != nil {
+						return nil, err
+					}
+					newEnv.Set(key.Value, val)
+				}
+
+				return eval(rawArgs[1], newEnv)
+			case "do":
+				if len(rawArgs) == 0 {
+					return nil, fmt.Errorf("wrong number of arguments for do")
+				}
+				var evaled MalValue
+				for _, arg := range rawArgs {
+					val, err := eval(arg, env)
+					if err != nil {
+						return nil, err
+					}
+					evaled = val
+				}
+				return eval(evaled, env)
+			case "if":
+				if len(rawArgs) != 2 && len(rawArgs) != 3 {
+					return nil, fmt.Errorf("wrong number of arguments for if")
+				}
+				cond, err := eval(rawArgs[0], env)
+				if err != nil {
+					return nil, err
+				}
+
+				truthy := true
+				if cond == nil {
+					truthy = false
+				} else if b, ok := cond.(MalBool); ok {
+					truthy = b.Value
+				}
+
+				if truthy {
+					return eval(rawArgs[1], env)
+				} else {
+					if len(rawArgs) != 3 {
+						return nil, nil
+					} else {
+						return eval(rawArgs[2], env)
+					}
+				}
+			case "fn*":
+				if len(rawArgs) != 2 {
+					return nil, fmt.Errorf("wrong number of arguments for fn*")
+				}
+
+				params, ok := rawArgs[0].(MalList)
+				if !ok {
+					return nil, fmt.Errorf("first argument of fn* must be MalList, got %v", rawArgs[0])
+				}
+				paramStrs := make([]string, len(params.Values))
+				for i, p := range params.Values {
+					sym, ok := p.(MalSymbol)
+					if !ok {
+						return nil, fmt.Errorf("parameter must be MalSymbol, got %v", p)
+					}
+					paramStrs[i] = sym.Value
+				}
+
+				fn := func(args []MalValue) (MalValue, error) {
+					if len(args) != len(paramStrs) {
+						return nil, fmt.Errorf("wrong number of arguments")
+					}
+					newEnv := NewEnv(env, paramStrs, args)
+					return eval(rawArgs[1], newEnv)
+				}
+				return MalFunc{F: fn}, nil
+			}
+		}
+
+		evalListR, err := EvalAst(p, env)
+		if err != nil {
+			return nil, err
+		}
+		evalList := evalListR.(MalList)
+		if len(evalList.Values) == 0 {
+			panic("unreachable")
+		}
+		head := evalList.Values[0]
+		args := evalList.Values[1:]
+
+		f, ok := head.(MalFunc)
+		if !ok {
+			return nil, fmt.Errorf("first element of list must be MalFunc, got %v", head)
+		}
+		return f.F(args)
+	default:
+		return EvalAst(param, env)
+	}
+}
+
+func print(param MalValue) string {
+	return PrStr(param, true)
+}
+
+func rep(param string, env *Env) (string, error) {
+	step1, err := read(param)
+	if err != nil {
+		return "", err
+	}
+	step2, err := eval(step1, env)
+	if err != nil {
+		return "", err
+	}
+	step3 := print(step2)
+	return step3, nil
+}
+
+func main() {
+	env := InitialEnv()
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		prompt := "user> "
+		fmt.Print(prompt)
+
+		scanner.Scan()
+		userInput := scanner.Text()
+
+		if userInput == "" {
+			fmt.Println("")
+			break
+		}
+
+		result, err := rep(userInput, env)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			continue
+		}
+		fmt.Println(result)
+	}
+}

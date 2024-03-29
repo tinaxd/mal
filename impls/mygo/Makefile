@@ -12,4 +12,6 @@ step3_env: src/step3_env/*.go
 
 step4_if_fn_do: src/step4_if_fn_do/*.go
 	go build -o step4_if_fn_do src/step4_if_fn_do/*.go
-	
+
+step5_tco: src/step5_tco/*.go
+	go build -o step5_tco src/step5_tco/*.go
