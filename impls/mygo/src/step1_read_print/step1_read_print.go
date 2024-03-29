@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func read(param string) MalValue {
+func read(param string) (MalValue, error) {
 	return ReadStr(param)
 }
 
@@ -14,15 +14,18 @@ func eval(param MalValue) MalValue {
 	return param
 }
 
-func print(param MalValue) interface{} {
+func print(param MalValue) string {
 	return PrStr(param)
 }
 
-func rep(param string) interface{} {
-	step1 := read(param)
+func rep(param string) (string, error) {
+	step1, err := read(param)
+	if err != nil {
+		return "", err
+	}
 	step2 := eval(step1)
 	step3 := print(step2)
-	return step3
+	return step3, nil
 }
 
 func main() {
@@ -39,7 +42,11 @@ func main() {
 			break
 		}
 
-		result := rep(userInput)
+		result, err := rep(userInput)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			continue
+		}
 		fmt.Println(result)
 	}
 }
