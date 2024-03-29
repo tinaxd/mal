@@ -1,8 +1,7 @@
 package main
 
-type MalValue struct {
-	Type  MalValueType
-	Value interface{}
+type MalValue interface {
+	MalValue()
 }
 
 type MalValueType int
@@ -12,3 +11,21 @@ const (
 	TMalInt                        // int
 	TMalSymbol                     // string
 )
+
+type MalList struct {
+	Values []MalValue
+}
+
+func (MalList) MalValue() {}
+
+type MalInt struct {
+	Value int64
+}
+
+func (MalInt) MalValue() {}
+
+type MalSymbol struct {
+	Value string
+}
+
+func (MalSymbol) MalValue() {}
