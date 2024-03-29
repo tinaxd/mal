@@ -6,3 +6,6 @@ step1_read_print: src/step1_read_print/*.go
 
 step2_eval: src/step2_eval/*.go
 	go build -o step2_eval src/step2_eval/*.go
+
+step3_env: src/step3_env/*.go
+	go build -o step3_env src/step3_env/*.go
