@@ -42,6 +42,12 @@ type MalBool struct {
 
 func (MalBool) MalValue() {}
 
+type MalString struct {
+	Value string
+}
+
+func (MalString) MalValue() {}
+
 func malEq(v1 MalValue, v2 MalValue) bool {
 	if v1 == nil {
 		return v2 == nil
@@ -68,6 +74,12 @@ func malEq(v1 MalValue, v2 MalValue) bool {
 		panic("unimplemented")
 	case MalBool:
 		v2, ok := v2.(MalBool)
+		if !ok {
+			return false
+		}
+		return v1.Value == v2.Value
+	case MalString:
+		v2, ok := v2.(MalString)
 		if !ok {
 			return false
 		}

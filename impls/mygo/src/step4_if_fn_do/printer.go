@@ -1,8 +1,18 @@
 package main
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
-func PrStr(v MalValue) string {
+func readableString(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "\"", "\\\"")
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	return s
+}
+
+func PrStr(v MalValue, readably bool) string {
 	if v == nil {
 		return "nil"
 	}
@@ -20,13 +30,19 @@ func PrStr(v MalValue) string {
 		}
 	case MalFunc:
 		return "#<function>"
+	case MalString:
+		if readably {
+			return "\"" + readableString(vv.Value) + "\""
+		} else {
+			return vv.Value
+		}
 	case MalList:
 		str := "("
 		for i, value := range vv.Values {
 			if i != 0 {
 				str += " "
 			}
-			str += PrStr(value)
+			str += PrStr(value, readably)
 		}
 		str += ")"
 		return str

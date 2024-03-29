@@ -4,6 +4,7 @@ import (
 	"errors"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type Reader struct {
@@ -113,6 +114,12 @@ func (r *Reader) ReadAtom() (MalValue, error) {
 		return MalBool{Value: false}, nil
 	} else if token == "nil" {
 		return nil, nil
+	} else if token[0] == '"' {
+		substr := token[1 : len(token)-1]
+		substr = strings.ReplaceAll(substr, "\\\"", "\"")
+		substr = strings.ReplaceAll(substr, "\\n", "\n")
+		substr = strings.ReplaceAll(substr, "\\\\", "\\")
+		return MalString{Value: substr}, nil
 	} else {
 		return MalSymbol{Value: token}, nil
 	}

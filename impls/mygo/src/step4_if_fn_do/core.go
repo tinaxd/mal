@@ -56,7 +56,7 @@ func DefaultNamespace() Namespace {
 		if len(args) != 1 {
 			return nil, ErrWrongFuncNArgs
 		}
-		s := PrStr(args[0])
+		s := PrStr(args[0], true)
 		fmt.Println(s)
 		return nil, nil
 	})

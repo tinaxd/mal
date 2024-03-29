@@ -151,7 +151,7 @@ func eval(param MalValue, env *Env) (MalValue, error) {
 }
 
 func print(param MalValue) string {
-	return PrStr(param)
+	return PrStr(param, true)
 }
 
 func rep(param string, env *Env) (string, error) {
