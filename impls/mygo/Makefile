@@ -9,3 +9,7 @@ step2_eval: src/step2_eval/*.go
 
 step3_env: src/step3_env/*.go
 	go build -o step3_env src/step3_env/*.go
+
+step4_if_fn_do: src/step4_if_fn_do/*.go
+	go build -o step4_if_fn_do src/step4_if_fn_do/*.go
+	
