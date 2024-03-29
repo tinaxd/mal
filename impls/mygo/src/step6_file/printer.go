@@ -30,6 +30,8 @@ func PrStr(v MalValue, readably bool) string {
 		}
 	case MalFunc:
 		return "#<function>"
+	case MalTcoFunc:
+		return "#<function>"
 	case MalString:
 		if readably {
 			return "\"" + readableString(vv.Value) + "\""
@@ -46,6 +48,12 @@ func PrStr(v MalValue, readably bool) string {
 		}
 		str += ")"
 		return str
+	case *MalAtom:
+		var v MalValue
+		if vv.Ref != nil {
+			v = vv.Ref
+		}
+		return "(atom " + PrStr(v, readably) + ")"
 	}
 
 	panic("unreachable")

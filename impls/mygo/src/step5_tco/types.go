@@ -4,6 +4,10 @@ type MalValue interface {
 	MalValue()
 }
 
+type MalInvoke interface {
+	Invoke([]MalValue) (MalValue, error)
+}
+
 type MalValueType int
 
 const (
@@ -35,6 +39,21 @@ type MalFunc struct {
 }
 
 func (MalFunc) MalValue() {}
+func (f MalFunc) Invoke(args []MalValue) (MalValue, error) {
+	return f.F(args)
+}
+
+type MalTcoFunc struct {
+	Ast    MalValue
+	Params []string
+	Env    *Env
+	Fn     MalFunc
+}
+
+func (MalTcoFunc) MalValue() {}
+func (f MalTcoFunc) Invoke(args []MalValue) (MalValue, error) {
+	return f.Fn.F(args)
+}
 
 type MalBool struct {
 	Value bool

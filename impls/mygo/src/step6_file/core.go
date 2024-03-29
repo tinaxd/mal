@@ -200,5 +200,62 @@ func DefaultNamespace() Namespace {
 		return nil, nil
 	})
 
+	m[makeSymbol("atom")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		return NewMalAtom(args[0]), nil
+	})
+	m[makeSymbol("atom?")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		_, ok := args[0].(*MalAtom)
+		return MalBool{Value: ok}, nil
+	})
+	m[makeSymbol("deref")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		a, ok := args[0].(*MalAtom)
+		if !ok {
+			return nil, fmt.Errorf("expected MalAtom, got %v", args[0])
+		}
+		return a.Ref, nil
+	})
+	m[makeSymbol("reset!")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		a, ok := args[0].(*MalAtom)
+		if !ok {
+			return nil, fmt.Errorf("expected MalAtom, got %v", args[0])
+		}
+		a.Ref = args[1]
+		return args[1], nil
+	})
+	m[makeSymbol("swap!")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) < 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		a, ok := args[0].(*MalAtom)
+		if !ok {
+			return nil, fmt.Errorf("expected MalAtom, got %v", args[0])
+		}
+		f, ok := args[1].(MalInvoke)
+		if !ok {
+			return nil, fmt.Errorf("expected MalFunc, got %v", args[1])
+		}
+		fArgs := make([]MalValue, len(args)-1)
+		fArgs[0] = a.Ref
+		copy(fArgs[1:], args[2:])
+		newVal, err := f.Invoke(fArgs)
+		if err != nil {
+			return nil, err
+		}
+		a.Ref = newVal
+		return newVal, nil
+	})
+
 	return Namespace{M: m}
 }

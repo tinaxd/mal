@@ -28,7 +28,7 @@ func PrStr(v MalValue, readably bool) string {
 		} else {
 			return "false"
 		}
-	case MalFunc:
+	case MalInvoke:
 		return "#<function>"
 	case MalString:
 		if readably {

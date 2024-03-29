@@ -39,7 +39,7 @@ func ReadStr(input string) (MalValue, error) {
 }
 
 func Tokenize(input string) []string {
-	re := "[\\s,]*(~@|[\\[\\]{}()'`~^@]|\"(?:\\.|[^\\\"])*\"?|;.*|[^\\s\\[\\]{}('\"`,;)]*)"
+	re := `[\s,]*(~@|[\[\]{}()'\x60~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"\x60,;)]*)`
 	compiled := regexp.MustCompile(re)
 
 	rem := input
@@ -116,9 +116,12 @@ func (r *Reader) ReadAtom() (MalValue, error) {
 		return nil, nil
 	} else if token[0] == '"' {
 		substr := token[1 : len(token)-1]
+		// log.Printf("initial substr: %v", substr)
 		substr = strings.ReplaceAll(substr, "\\\"", "\"")
 		substr = strings.ReplaceAll(substr, "\\n", "\n")
+		// log.Printf("before substr: %v", substr)
 		substr = strings.ReplaceAll(substr, "\\\\", "\\")
+		// log.Printf("after substr: %v", substr)
 		return MalString{Value: substr}, nil
 	} else {
 		return MalSymbol{Value: token}, nil
