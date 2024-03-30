@@ -69,6 +69,34 @@ func (r *Reader) ReadForm() (MalValue, error) {
 	}
 	if peek == "(" {
 		return r.ReadList()
+	} else if peek == "'" {
+		r.Next() // consume "'"
+		form, err := r.ReadForm()
+		if err != nil {
+			return nil, err
+		}
+		return MalList{Values: []MalValue{makeSymbol("quote"), form}}, nil
+	} else if peek == "`" {
+		r.Next() // consume "`"
+		form, err := r.ReadForm()
+		if err != nil {
+			return nil, err
+		}
+		return MalList{Values: []MalValue{makeSymbol("quasiquote"), form}}, nil
+	} else if peek == "~" {
+		r.Next() // consume "~"
+		form, err := r.ReadForm()
+		if err != nil {
+			return nil, err
+		}
+		return MalList{Values: []MalValue{makeSymbol("unquote"), form}}, nil
+	} else if peek == "~@" {
+		r.Next() // consume "~@"
+		form, err := r.ReadForm()
+		if err != nil {
+			return nil, err
+		}
+		return MalList{Values: []MalValue{makeSymbol("splice-unquote"), form}}, nil
 	} else {
 		return r.ReadAtom()
 	}
