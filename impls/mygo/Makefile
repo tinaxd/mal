@@ -16,8 +16,8 @@ step4_if_fn_do: src/step8_macros/*.go
 step5_tco: src/step5_tco/*.go
 	go build -o step5_tco src/step5_tco/*.go
 
-step6_file: src/step6_file/*.go
-	go build -o step6_file src/step6_file/*.go
+step6_file: src/step8_macros/*.go
+	go build -o step6_file src/step8_macros/*.go
 
 step7_quote: src/step7_quote/*.go
 	go build -o step7_quote src/step7_quote/*.go

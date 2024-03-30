@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 )
@@ -265,6 +266,9 @@ func print(param MalValue) string {
 func rep(param string, env *Env) (string, error) {
 	step1, err := read(param)
 	if err != nil {
+		if errors.Is(err, ErrReadNoToken) {
+			return "", nil
+		}
 		return "", err
 	}
 	step2, err := eval(step1, env, env)

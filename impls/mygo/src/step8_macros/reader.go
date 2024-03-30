@@ -4,6 +4,11 @@ import (
 	"errors"
 	"regexp"
 	"strconv"
+	"strings"
+)
+
+var (
+	ErrReadNoToken = errors.New("no tokens read")
 )
 
 type Reader struct {
@@ -33,6 +38,9 @@ func (r *Reader) Peek() (string, error) {
 
 func ReadStr(input string) (MalValue, error) {
 	tokens := Tokenize(input)
+	if len(tokens) == 0 {
+		return nil, ErrReadNoToken
+	}
 	r := NewReader(tokens)
 	return r.ReadForm()
 }
@@ -53,6 +61,12 @@ func Tokenize(input string) []string {
 		// log.Printf("token: %v", token)
 		// log.Printf("len(token): %d", len(token))
 		// log.Printf("len(token[0]): %d", len(token[0]))
+
+		// remove comments
+		if strings.HasPrefix(token[1], ";") {
+			rem = rem[len(token[0]):]
+			continue
+		}
 
 		tokens = append(tokens, token[1])
 		rem = rem[len(token[0]):]
