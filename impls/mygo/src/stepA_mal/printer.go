@@ -22,6 +22,8 @@ func PrStr(v MalValue, readably bool) string {
 		return vv.Value
 	case MalInt:
 		return strconv.FormatInt(vv.Value, 10)
+	case MalFloat:
+		return strconv.FormatFloat(vv.Value, 'f', -1, 64)
 	case MalBool:
 		if vv.Value {
 			return "true"

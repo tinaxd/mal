@@ -204,11 +204,19 @@ func (r *Reader) ReadAtom() (MalValue, error) {
 	}
 	// if token[0] is a digit
 	if (token[0] >= '0' && token[0] <= '9') || (len(token) > 1 && token[0] == '-' && (token[1] >= '0' && token[1] <= '9')) {
-		integer, err := strconv.ParseInt(token, 10, 64)
-		if err != nil {
-			panic(err)
+		if !strings.Contains(token, ".") {
+			integer, err := strconv.ParseInt(token, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			return MalInt{Value: integer}, nil
+		} else {
+			float, err := strconv.ParseFloat(token, 64)
+			if err != nil {
+				panic(err)
+			}
+			return MalFloat{Value: float}, nil
 		}
-		return MalInt{Value: integer}, nil
 	} else if token == "true" {
 		return MalBool{Value: true}, nil
 	} else if token == "false" {

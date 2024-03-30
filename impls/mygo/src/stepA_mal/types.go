@@ -204,6 +204,15 @@ func NewMapFromList(values []MalValue) (*MalMap, error) {
 	return m, nil
 }
 
+type MalFloat struct {
+	Value float64
+}
+
+func (MalFloat) MalValue() {}
+func NewFloat(f float64) MalFloat {
+	return MalFloat{Value: f}
+}
+
 func malEq(v1 MalValue, v2 MalValue) bool {
 	if v1 == nil {
 		return v2 == nil
@@ -212,6 +221,12 @@ func malEq(v1 MalValue, v2 MalValue) bool {
 	switch v1 := v1.(type) {
 	case MalInt:
 		v2, ok := v2.(MalInt)
+		if !ok {
+			return false
+		}
+		return v1.Value == v2.Value
+	case MalFloat:
+		v2, ok := v2.(MalFloat)
 		if !ok {
 			return false
 		}

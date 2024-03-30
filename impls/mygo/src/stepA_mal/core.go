@@ -26,36 +26,135 @@ func makeFunc(f func([]MalValue) (MalValue, error)) MalFunc {
 	return MalFunc{F: f}
 }
 
+func forceInt(a interface{}) int64 {
+	switch a := a.(type) {
+	case int64:
+		return a
+	case float64:
+		return int64(a)
+	default:
+		panic("unexpected type")
+	}
+}
+
+func forceFloat(a interface{}) float64 {
+	switch a := a.(type) {
+	case int64:
+		return float64(a)
+	case float64:
+		return a
+	default:
+		panic("unexpected type")
+	}
+}
+
 func DefaultNamespace() Namespace {
 	m := make(map[MalSymbol]MalFunc)
 	makeF :=
-		func(f func(int64, int64) int64) MalFunc {
+		func(f func(interface{}, interface{}) interface{}) MalFunc {
 			return MalFunc{F: func(args []MalValue) (MalValue, error) {
 				if len(args) != 2 {
 					return nil, ErrWrongFuncNArgs
 				}
-				a, ok := args[0].(MalInt)
-				if !ok {
-					return nil, fmt.Errorf("first argument is not an integer: %v", args[0])
+				var aVal, bVal interface{}
+				a, aOkInt := args[0].(MalInt)
+				if !aOkInt {
+					af, aOkFloat := args[0].(MalFloat)
+					if !aOkFloat {
+						return nil, fmt.Errorf("first argument is not an integer or float: %v", args[0])
+					}
+					aVal = af.Value
+				} else {
+					aVal = a.Value
 				}
-				b, ok := args[1].(MalInt)
-				if !ok {
-					return nil, fmt.Errorf("second argument is not an integer: %v", args[1])
+
+				b, bOkInt := args[1].(MalInt)
+				if !bOkInt {
+					bf, bOkFloat := args[1].(MalFloat)
+					if !bOkFloat {
+						return nil, fmt.Errorf("second argument is not an integer or float: %v", args[1])
+					}
+					bVal = bf.Value
+				} else {
+					bVal = b.Value
 				}
-				return MalInt{Value: f(a.Value, b.Value)}, nil
+
+				result := f(aVal, bVal)
+				switch v := result.(type) {
+				case int64:
+					return MalInt{Value: v}, nil
+				case float64:
+					return MalFloat{Value: v}, nil
+				case bool:
+					return NewBool(v), nil
+				default:
+					panic("unexpected type")
+				}
 			}}
 		}
-	m[makeSymbol("+")] = makeF(func(a, b int64) int64 {
-		return a + b
+	m[makeSymbol("+")] = makeF(func(a, b interface{}) interface{} {
+		bothInt := false
+		if _, aIsInt := a.(int64); aIsInt {
+			if _, bIsInt := b.(int64); bIsInt {
+				bothInt = true
+			}
+		}
+
+		if bothInt {
+			return a.(int64) + b.(int64)
+		} else {
+			return forceFloat(a) + forceFloat(b)
+		}
 	})
-	m[makeSymbol("-")] = makeF(func(a, b int64) int64 {
-		return a - b
+	m[makeSymbol("-")] = makeF(func(a, b interface{}) interface{} {
+		bothInt := false
+		if _, aIsInt := a.(int64); aIsInt {
+			if _, bIsInt := b.(int64); bIsInt {
+				bothInt = true
+			}
+		}
+
+		if bothInt {
+			return a.(int64) - b.(int64)
+		} else {
+			return forceFloat(a) - forceFloat(b)
+		}
 	})
-	m[makeSymbol("*")] = makeF(func(a, b int64) int64 {
-		return a * b
+	m[makeSymbol("*")] = makeF(func(a, b interface{}) interface{} {
+		bothInt := false
+		if _, aIsInt := a.(int64); aIsInt {
+			if _, bIsInt := b.(int64); bIsInt {
+				bothInt = true
+			}
+		}
+
+		if bothInt {
+			return a.(int64) * b.(int64)
+		} else {
+			return forceFloat(a) * forceFloat(b)
+		}
 	})
-	m[makeSymbol("/")] = makeF(func(a, b int64) int64 {
-		return a / b
+	m[makeSymbol("/")] = makeF(func(a, b interface{}) interface{} {
+		bothInt := false
+		if _, aIsInt := a.(int64); aIsInt {
+			if _, bIsInt := b.(int64); bIsInt {
+				bothInt = true
+			}
+		}
+
+		if bothInt {
+			return a.(int64) / b.(int64)
+		} else {
+			return forceFloat(a) / forceFloat(b)
+		}
+	})
+	m[makeSymbol("prnn")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		s := PrStr(args[0], true)
+		fmt.Print(s)
+		return nil, nil
 	})
 	m[makeSymbol("prn")] = makeFunc(func(args []MalValue) (MalValue, error) {
 		if len(args) != 1 {
@@ -110,27 +209,18 @@ func DefaultNamespace() Namespace {
 		return MalBool{Value: malEq(args[0], args[1])}, nil
 	})
 
-	mkCmp := func(f func(int64, int64) bool) MalFunc {
-		return makeFunc(func(args []MalValue) (MalValue, error) {
-			if len(args) != 2 {
-				return nil, ErrWrongFuncNArgs
-			}
-			a, ok := args[0].(MalInt)
-			if !ok {
-				return nil, fmt.Errorf("first argument is not an integer: %v", args[0])
-			}
-			b, ok := args[1].(MalInt)
-			if !ok {
-				return nil, fmt.Errorf("second argument is not an integer: %v", args[1])
-			}
-			return MalBool{Value: f(a.Value, b.Value)}, nil
-		})
-	}
-
-	m[makeSymbol("<")] = mkCmp(func(a, b int64) bool { return a < b })
-	m[makeSymbol("<=")] = mkCmp(func(a, b int64) bool { return a <= b })
-	m[makeSymbol(">")] = mkCmp(func(a, b int64) bool { return a > b })
-	m[makeSymbol(">=")] = mkCmp(func(a, b int64) bool { return a >= b })
+	m[makeSymbol("<")] = makeF(func(a, b interface{}) interface{} {
+		return forceFloat(a) < forceFloat(b)
+	})
+	m[makeSymbol("<=")] = makeF(func(a, b interface{}) interface{} {
+		return forceFloat(a) <= forceFloat(b)
+	})
+	m[makeSymbol(">")] = makeF(func(a, b interface{}) interface{} {
+		return forceFloat(a) > forceFloat(b)
+	})
+	m[makeSymbol(">=")] = makeF(func(a, b interface{}) interface{} {
+		return forceFloat(a) >= forceFloat(b)
+	})
 
 	m[makeSymbol("read-string")] = makeFunc(func(args []MalValue) (MalValue, error) {
 		if len(args) != 1 {
@@ -192,6 +282,17 @@ func DefaultNamespace() Namespace {
 			fmt.Print(s)
 		}
 		fmt.Println()
+		return nil, nil
+	})
+	m[makeSymbol("print")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		for i, arg := range args {
+			s := PrStr(arg, false)
+
+			if i > 0 {
+				fmt.Print(" ")
+			}
+			fmt.Print(s)
+		}
 		return nil, nil
 	})
 	m[makeSymbol("println")] = makeFunc(func(args []MalValue) (MalValue, error) {

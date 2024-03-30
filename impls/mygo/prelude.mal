@@ -1,0 +1,91 @@
+(defmacro! defun (fn* (args & body)
+    (let*
+        (
+            fun-name (first args)
+            fun-args (rest args)
+        )
+        `(def! ~fun-name (fn* (~@fun-args) ~@body))
+    )
+))
+
+(defun (complex re im) (list re im))
+(defun (creal c) (nth c 0))
+(defun (cimg c) (nth c 1))
+(defun (cadd c1 c2)
+    (complex
+        (+ (creal c1) (creal c2))
+        (+ (cimg c1) (cimg c2))
+    )
+)
+(defun (cmul c1 c2)
+    (complex
+        (-
+            (* (creal c1) (creal c2))
+            (* (cimg c1) (cimg c2))
+        )
+        (+
+            (* (creal c1) (cimg c2))
+            (* (cimg c1) (creal c2))
+        )
+    )
+)
+(defun (cnorm c)
+    (let*
+        (
+            r (creal c)
+            i (cimg c)
+        )
+        (+
+            (* r r)
+            (* i i)
+        )
+    )
+)
+
+;(prn (cnorm (complex 1.0 2.0)))
+
+(defun (mandelbrot re im max-iter)
+    (let*
+        (
+            c (complex re im)
+            ff (fn* (cur-iter z)
+                (cond
+                    (>= cur-iter max-iter) max-iter
+                    true (let*
+                        (
+                            new-z (cadd (cmul z z) c)
+                            new-z-norm (cnorm new-z)
+                        )
+                        (if (>= new-z-norm 4)
+                            cur-iter
+                            (ff (+ cur-iter 1) new-z)
+                        )
+                    )
+                )
+            )
+        )
+        (ff 0 (complex 0.0 0.0))
+    )
+)
+
+(defun (mloop cur-x cur-y min-x max-x min-y max-y step-x step-y)
+    (do
+        (let*
+            (ans (mandelbrot cur-x cur-y 100))
+            (if (< ans 50)
+                (print "+")
+                (print " ")
+            )
+        )
+        (cond
+            (> cur-y max-y) nil
+            (> cur-x max-x) (do
+                (println "")
+                (mloop min-x (+ cur-y step-y) min-x max-x min-y max-y step-x step-y)
+            )
+            true (mloop (+ cur-x step-x) cur-y min-x max-x min-y max-y step-x step-y)
+        )
+    )
+)
+
+(mloop -2 -1 -2 1 -1 1 (/ 3.0 50) (/ 2.0 50))
