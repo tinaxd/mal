@@ -89,7 +89,7 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 					fallthrough
 				case "def!":
 					if len(rawArgs) != 2 {
-						return nil, fmt.Errorf("wrong number of arguments")
+						return nil, fmt.Errorf("wrong number of arguments for def")
 					}
 					key, ok := rawArgs[0].(MalSymbol)
 					if !ok {
@@ -119,7 +119,7 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 					return val, nil
 				case "let*":
 					if len(rawArgs) != 2 {
-						return nil, fmt.Errorf("wrong number of arguments")
+						return nil, fmt.Errorf("wrong number of arguments for let*")
 					}
 
 					bindings, ok := rawArgs[0].(MalList)
@@ -129,7 +129,10 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 					if len(bindings.Values)%2 != 0 {
 						return nil, fmt.Errorf("bindings must be even, got %v", bindings)
 					}
-					env = NewEnv(env, nil, nil)
+					env, err = NewEnv(env, nil, nil)
+					if err != nil {
+						return nil, err
+					}
 					for i := 0; i < len(bindings.Values); i += 2 {
 						key, ok := bindings.Values[i].(MalSymbol)
 						if !ok {
@@ -202,10 +205,10 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 					}
 
 					fn := func(args []MalValue) (MalValue, error) {
-						if len(args) != len(paramStrs) {
-							return nil, fmt.Errorf("wrong number of arguments")
+						newEnv, err := NewEnv(env, paramStrs, args)
+						if err != nil {
+							return nil, err
 						}
-						newEnv := NewEnv(env, paramStrs, args)
 						return eval(rawArgs[1], replEnv, newEnv)
 					}
 					return MalTcoFunc{Ast: rawArgs[1], Params: paramStrs, Env: env, Fn: MalFunc{F: fn}}, nil
@@ -248,7 +251,10 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 				return f.F(args)
 			case MalTcoFunc:
 				param = f.Ast
-				env = NewEnv(f.Env, f.Params, args)
+				env, err = NewEnv(f.Env, f.Params, args)
+				if err != nil {
+					return nil, err
+				}
 				continue
 			default:
 				return nil, fmt.Errorf("not a function: %v", head)
@@ -284,6 +290,7 @@ func main() {
 
 	rep("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\nnil)\")))))", env)
 	rep("(def! not (fn* (a) (if a false true)))", env)
+	rep("(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))", env)
 
 	if len(os.Args) > 1 {
 		filename := os.Args[1]

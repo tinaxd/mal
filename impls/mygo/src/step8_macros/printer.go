@@ -70,6 +70,16 @@ func PrStr(v MalValue, readably bool) string {
 			v = vv.Ref
 		}
 		return "(atom " + PrStr(v, readably) + ")"
+	case *MalMap:
+		str := "{"
+		for i, kv := range vv.Iter() {
+			if i != 0 {
+				str += " "
+			}
+			str += PrStr(kv.Key, readably) + " " + PrStr(kv.Value, readably)
+		}
+		str += "}"
+		return str
 	}
 
 	panic("unreachable")

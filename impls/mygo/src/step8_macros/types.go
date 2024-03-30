@@ -1,6 +1,9 @@
 package main
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 const (
 	KeywordPrefix = "\u029e"
@@ -104,6 +107,10 @@ func isKeywordString(s string) bool {
 	return strings.HasPrefix(s, KeywordPrefix)
 }
 
+func NewString(s string) MalString {
+	return MalString{Value: s}
+}
+
 func NewKeyword(s string) MalString {
 	return MalString{Value: KeywordPrefix + s}
 }
@@ -115,6 +122,56 @@ type MalAtom struct {
 func (*MalAtom) MalValue() {}
 func NewMalAtom(v MalValue) *MalAtom {
 	return &MalAtom{Ref: v}
+}
+
+type MalMapEntry struct {
+	Key   MalValue
+	Value MalValue
+}
+
+type MalMap struct {
+	values []MalMapEntry
+}
+
+func (*MalMap) MalValue() {}
+
+func NewMap() *MalMap {
+	return &MalMap{values: []MalMapEntry{}}
+}
+
+func (m *MalMap) Get(key MalValue) (MalValue, bool) {
+	for _, entry := range m.values {
+		if malEq(entry.Key, key) {
+			return entry.Value, true
+		}
+	}
+	return nil, false
+}
+
+func (m *MalMap) Set(key MalValue, value MalValue) {
+	for i, entry := range m.values {
+		if malEq(entry.Key, key) {
+			m.values[i].Value = value
+			return
+		}
+	}
+	m.values = append(m.values, MalMapEntry{Key: key, Value: value})
+}
+
+func (m *MalMap) Iter() []MalMapEntry {
+	return m.values
+}
+
+func NewMapFromList(values []MalValue) (*MalMap, error) {
+	if len(values)%2 != 0 {
+		return nil, errors.New("odd number of values")
+	}
+
+	m := NewMap()
+	for i := 0; i < len(values); i += 2 {
+		m.Set(values[i], values[i+1])
+	}
+	return m, nil
 }
 
 func malEq(v1 MalValue, v2 MalValue) bool {

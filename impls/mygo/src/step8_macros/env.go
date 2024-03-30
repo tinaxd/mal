@@ -1,23 +1,31 @@
 package main
 
+import "fmt"
+
 type Env struct {
 	M     map[string]MalValue
 	Outer *Env
 }
 
-func NewEnv(outer *Env, binds []string, exprs []MalValue) *Env {
+func NewEnv(outer *Env, binds []string, exprs []MalValue) (*Env, error) {
 	env := &Env{M: make(map[string]MalValue), Outer: outer}
 
+	useRest := false
 	for i, bind := range binds {
 		if bind == "&" {
 			// set the rest
 			env.Set(binds[i+1], MalList{Values: exprs[i:]})
+			useRest = true
 			break
 		}
 		env.Set(bind, exprs[i])
 	}
 
-	return env
+	if !useRest && (len(binds) != len(exprs)) {
+		return nil, fmt.Errorf("expected %d binds, got %d", len(binds), len(exprs))
+	}
+
+	return env, nil
 }
 
 func (e *Env) Set(key string, val MalValue) {

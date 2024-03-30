@@ -310,6 +310,9 @@ func DefaultNamespace() Namespace {
 		if len(args) != 1 {
 			return nil, ErrWrongFuncNArgs
 		}
+		if args[0] == nil {
+			return nil, nil
+		}
 		l, ok := args[0].(MalList)
 		if !ok {
 			return nil, fmt.Errorf("expected MalList, got %v", args[0])
@@ -322,6 +325,9 @@ func DefaultNamespace() Namespace {
 	m[makeSymbol("rest")] = makeFunc(func(args []MalValue) (MalValue, error) {
 		if len(args) != 1 {
 			return nil, ErrWrongFuncNArgs
+		}
+		if args[0] == nil {
+			return NewList([]MalValue{}), nil
 		}
 		l, ok := args[0].(MalList)
 		if !ok {

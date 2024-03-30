@@ -81,9 +81,11 @@ func (r *Reader) ReadForm() (MalValue, error) {
 		return nil, err
 	}
 	if peek == "(" {
-		return r.ReadList(false)
+		return r.ReadList(ListTypeList)
 	} else if peek == "[" {
-		return r.ReadList(true)
+		return r.ReadList(ListTypeVector)
+	} else if peek == "{" {
+		return r.ReadList(ListTypeMap)
 	} else if peek == "'" {
 		r.Next() // consume "'"
 		form, err := r.ReadForm()
@@ -126,7 +128,15 @@ func (r *Reader) ReadForm() (MalValue, error) {
 	}
 }
 
-func (r *Reader) ReadList(isVector bool) (MalValue, error) {
+type listType int
+
+const (
+	ListTypeList listType = iota
+	ListTypeVector
+	ListTypeMap
+)
+
+func (r *Reader) ReadList(typ listType) (MalValue, error) {
 	r.Next() // consume "("
 	values := []MalValue{}
 	for {
@@ -135,17 +145,24 @@ func (r *Reader) ReadList(isVector bool) (MalValue, error) {
 			return nil, err
 		}
 		if peek == ")" {
-			if isVector {
+			if typ != ListTypeList {
 				return nil, errors.New("unexpected `)`")
 			}
 			r.Next() // consume ")"
 			break
 		}
 		if peek == "]" {
-			if !isVector {
+			if typ != ListTypeVector {
 				return nil, errors.New("unexpected `]`")
 			}
 			r.Next() // consume "]"
+			break
+		}
+		if peek == "}" {
+			if typ != ListTypeMap {
+				return nil, errors.New("unexpected `}`")
+			}
+			r.Next() // consume "}"
 			break
 		}
 		form, err := r.ReadForm()
@@ -155,10 +172,15 @@ func (r *Reader) ReadList(isVector bool) (MalValue, error) {
 		values = append(values, form)
 	}
 
-	if isVector {
-		return NewVector(values), nil
-	} else {
+	switch typ {
+	case ListTypeList:
 		return NewList(values), nil
+	case ListTypeVector:
+		return NewVector(values), nil
+	case ListTypeMap:
+		return NewMapFromList(values)
+	default:
+		panic("unknown list type")
 	}
 }
 

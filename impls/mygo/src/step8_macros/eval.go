@@ -5,7 +5,10 @@ import (
 )
 
 func InitialEnv() *Env {
-	env := NewEnv(nil, nil, nil)
+	env, err := NewEnv(nil, nil, nil)
+	if err != nil {
+		panic("unreachable")
+	}
 
 	ns := DefaultNamespace()
 	for k, v := range ns.M {
@@ -33,6 +36,18 @@ func EvalAst(ast MalValue, replEnv *Env, env *Env) (MalValue, error) {
 			vals[i] = val
 		}
 		return MalList{Values: vals, Vector: a.Vector}, nil
+	case *MalMap:
+		kvs := make([]MalValue, 0)
+		for _, kv := range a.Iter() {
+			kvs = append(kvs, kv.Key)
+
+			v, err := eval(kv.Value, replEnv, env)
+			if err != nil {
+				return nil, err
+			}
+			kvs = append(kvs, v)
+		}
+		return NewMapFromList(kvs)
 	default:
 		return ast, nil
 	}

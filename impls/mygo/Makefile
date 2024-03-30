@@ -19,8 +19,8 @@ step5_tco: src/step5_tco/*.go
 step6_file: src/step8_macros/*.go
 	go build -o step6_file src/step8_macros/*.go
 
-step7_quote: src/step7_quote/*.go
-	go build -o step7_quote src/step7_quote/*.go
+step7_quote: src/step8_macros/*.go
+	go build -o step7_quote src/step8_macros/*.go
 
 step8_macros: src/step8_macros/*.go
 	go build -o step8_macros src/step8_macros/*.go
