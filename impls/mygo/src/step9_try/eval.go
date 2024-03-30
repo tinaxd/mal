@@ -23,7 +23,7 @@ func EvalAst(ast MalValue, replEnv *Env, env *Env) (MalValue, error) {
 	case MalSymbol:
 		v, ok := env.Get(a.Value)
 		if !ok {
-			return nil, fmt.Errorf("symbol '%s' not found", a.Value)
+			return nil, fmt.Errorf("'%s' not found", a.Value)
 		}
 		return v, nil
 	case MalList:

@@ -88,6 +88,10 @@ type MalBool struct {
 
 func (MalBool) MalValue() {}
 
+func NewBool(b bool) MalBool {
+	return MalBool{Value: b}
+}
+
 type MalString struct {
 	Value string
 }
@@ -158,8 +162,23 @@ func (m *MalMap) Set(key MalValue, value MalValue) {
 	m.values = append(m.values, MalMapEntry{Key: key, Value: value})
 }
 
+func (m *MalMap) Del(key MalValue) {
+	for i, entry := range m.values {
+		if malEq(entry.Key, key) {
+			m.values = append(m.values[:i], m.values[i+1:]...)
+			return
+		}
+	}
+}
+
 func (m *MalMap) Iter() []MalMapEntry {
 	return m.values
+}
+
+func CloneMap(m *MalMap) *MalMap {
+	newMap := make([]MalMapEntry, len(m.values))
+	copy(newMap, m.values)
+	return &MalMap{values: newMap}
 }
 
 func NewMapFromList(values []MalValue) (*MalMap, error) {
@@ -220,6 +239,41 @@ func malEq(v1 MalValue, v2 MalValue) bool {
 		}
 		for i := range v1.Values {
 			if !malEq(v1.Values[i], v2.Values[i]) {
+				return false
+			}
+		}
+
+		return true
+	case *MalMap:
+		v2, ok := v2.(*MalMap)
+		if !ok {
+			return false
+		}
+		if len(v1.values) != len(v2.values) {
+			return false
+		}
+
+		makeMap := func(m *MalMap) map[string]MalValue {
+			mm := make(map[string]MalValue)
+			for _, entry := range m.Iter() {
+				key := entry.Key
+				keyString, ok := key.(MalString)
+				if !ok {
+					panic("unimplemented")
+				}
+				mm[keyString.Value] = entry.Value
+			}
+			return mm
+		}
+		v1Map := makeMap(v1)
+		v2Map := makeMap(v2)
+
+		for k1, v1 := range v1Map {
+			v2, ok := v2Map[k1]
+			if !ok {
+				return false
+			}
+			if !malEq(v1, v2) {
 				return false
 			}
 		}

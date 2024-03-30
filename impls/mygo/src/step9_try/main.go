@@ -68,12 +68,18 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 				// special forms
 				switch h.Value {
 				case "try*":
-					if len(rawArgs) != 2 {
+					if len(rawArgs) < 1 {
 						return nil, fmt.Errorf("wrong number of arguments for try*")
 					}
 					tryExpr := rawArgs[0]
 					tried, err := eval(tryExpr, replEnv, env)
 					if err != nil {
+						// if catch* is not set
+						// just throw error
+						if len(rawArgs) < 2 {
+							return nil, err
+						}
+
 						malError, ok := err.(*MalError)
 						if !ok {
 							// internal error

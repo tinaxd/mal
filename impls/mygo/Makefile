@@ -24,3 +24,6 @@ step7_quote: src/step8_macros/*.go
 
 step8_macros: src/step8_macros/*.go
 	go build -o step8_macros src/step8_macros/*.go
+
+step9_try: src/step9_try/*.go
+	go build -o step9_try src/step9_try/*.go

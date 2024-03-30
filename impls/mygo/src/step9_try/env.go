@@ -18,6 +18,9 @@ func NewEnv(outer *Env, binds []string, exprs []MalValue) (*Env, error) {
 			useRest = true
 			break
 		}
+		if i >= len(exprs) {
+			return nil, fmt.Errorf("expected %d expressions, got %d", len(binds), len(exprs))
+		}
 		env.Set(bind, exprs[i])
 	}
 

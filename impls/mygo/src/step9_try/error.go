@@ -14,7 +14,7 @@ func NewErrorFromError(err error) *MalError {
 }
 
 func NewErrorFromValue(message MalValue) *MalError {
-	return &MalError{message: message}
+	return &MalError{message: message, value: message}
 }
 
 func (e *MalError) Error() string {

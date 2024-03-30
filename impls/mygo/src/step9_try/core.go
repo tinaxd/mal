@@ -346,6 +346,227 @@ func DefaultNamespace() Namespace {
 		return nil, NewErrorFromValue(args[0])
 	})
 
+	m[makeSymbol("apply")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) < 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		f, ok := args[0].(MalInvoke)
+		if !ok {
+			return nil, fmt.Errorf("expected MalFunc, got %v", args[0])
+		}
+
+		lastList, ok := args[len(args)-1].(MalList)
+		if !ok {
+			return nil, fmt.Errorf("expected MalList or MalVector, got %v", args[len(args)-1])
+		}
+
+		fArgs := make([]MalValue, 0)
+		for i := 1; i < len(args)-1; i++ {
+			fArgs = append(fArgs, args[i])
+		}
+		fArgs = append(fArgs, lastList.Values...)
+		return f.Invoke(fArgs)
+	})
+
+	m[makeSymbol("map")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		f, ok := args[0].(MalInvoke)
+		if !ok {
+			return nil, fmt.Errorf("expected MalFunc, got %v", args[0])
+		}
+
+		l, ok := args[1].(MalList)
+		if !ok {
+			return nil, fmt.Errorf("expected MalList or MalVector, got %v", args[1])
+		}
+
+		values := make([]MalValue, len(l.Values))
+		for i, v := range l.Values {
+			result, err := f.Invoke([]MalValue{v})
+			if err != nil {
+				return nil, err
+			}
+			values[i] = result
+		}
+		return MalList{Values: values}, nil
+	})
+
+	m[makeSymbol("symbol")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		s, ok := args[0].(MalString)
+		if !ok {
+			return nil, fmt.Errorf("expected MalString, got %v", args[0])
+		}
+		return makeSymbol(s.Value), nil
+	})
+
+	m[makeSymbol("keyword")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		s, ok := args[0].(MalString)
+		if !ok {
+			return nil, fmt.Errorf("expected MalString, got %v", args[0])
+		}
+		if s.IsKeyword() {
+			return s, nil
+		}
+		return NewKeyword(s.Value), nil
+	})
+
+	m[makeSymbol("vector")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		values := make([]MalValue, len(args))
+		copy(values, args)
+		return NewVector(values), nil
+	})
+
+	m[makeSymbol("hash-map")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args)%2 != 0 {
+			return nil, fmt.Errorf("expected even number of arguments, got %d", len(args))
+		}
+		return NewMapFromList(args)
+	})
+
+	m[makeSymbol("assoc")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) < 3 {
+			return nil, fmt.Errorf("expected at least 3 arguments, got %d", len(args))
+		}
+		m, ok := args[0].(*MalMap)
+		if !ok {
+			return nil, fmt.Errorf("expected MalMap, got %v", args[0])
+		}
+		if len(args)%2 != 1 {
+			return nil, fmt.Errorf("expected even number of arguments, got %d", len(args))
+		}
+		newMap := CloneMap(m)
+		for i := 1; i < len(args); i += 2 {
+			newMap.Set(args[i], args[i+1])
+		}
+		return newMap, nil
+	})
+
+	m[makeSymbol("dissoc")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) < 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		m, ok := args[0].(*MalMap)
+		if !ok {
+			return nil, fmt.Errorf("expected MalMap, got %v", args[0])
+		}
+
+		newMap := CloneMap(m)
+		for _, k := range args[1:] {
+			newMap.Del(k)
+		}
+		return newMap, nil
+	})
+
+	m[makeSymbol("get")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		if args[0] == nil {
+			return nil, nil
+		}
+		m, ok := args[0].(*MalMap)
+		if !ok {
+			return nil, fmt.Errorf("expected MalMap, got %v", args[0])
+		}
+		v, ok := m.Get(args[1])
+		if !ok {
+			return nil, nil
+		}
+		return v, nil
+	})
+
+	m[makeSymbol("contains?")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		m, ok := args[0].(*MalMap)
+		if !ok {
+			return nil, fmt.Errorf("expected MalMap, got %v", args[0])
+		}
+		_, ok = m.Get(args[1])
+		return NewBool(ok), nil
+	})
+
+	m[makeSymbol("keys")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		m, ok := args[0].(*MalMap)
+		if !ok {
+			return nil, fmt.Errorf("expected MalMap, got %v", args[0])
+		}
+
+		keys := make([]MalValue, 0)
+		for _, kv := range m.Iter() {
+			keys = append(keys, kv.Key)
+		}
+		return NewList(keys), nil
+	})
+
+	m[makeSymbol("vals")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		m, ok := args[0].(*MalMap)
+		if !ok {
+			return nil, fmt.Errorf("expected MalMap, got %v", args[0])
+		}
+
+		vals := make([]MalValue, 0)
+		for _, kv := range m.Iter() {
+			vals = append(vals, kv.Value)
+		}
+		return NewList(vals), nil
+	})
+
+	onePred := func(f func(MalValue) bool) MalFunc {
+		return makeFunc(func(args []MalValue) (MalValue, error) {
+			if len(args) != 1 {
+				return nil, ErrWrongFuncNArgs
+			}
+			return MalBool{Value: f(args[0])}, nil
+		})
+	}
+	m[makeSymbol("nil?")] = onePred(func(v MalValue) bool {
+		return v == nil
+	})
+	m[makeSymbol("true?")] = onePred(func(v MalValue) bool {
+		b, ok := v.(MalBool)
+		return ok && b.Value
+	})
+	m[makeSymbol("false?")] = onePred(func(v MalValue) bool {
+		b, ok := v.(MalBool)
+		return ok && !b.Value
+	})
+	m[makeSymbol("symbol?")] = onePred(func(v MalValue) bool {
+		_, ok := v.(MalSymbol)
+		return ok
+	})
+	m[makeSymbol("keyword?")] = onePred(func(v MalValue) bool {
+		kw, ok := v.(MalString)
+		return ok && kw.IsKeyword()
+	})
+	m[makeSymbol("vector?")] = onePred(func(v MalValue) bool {
+		l, ok := v.(MalList)
+		return ok && l.IsVector()
+	})
+	m[makeSymbol("sequential?")] = onePred(func(v MalValue) bool {
+		_, ok := v.(MalList)
+		return ok
+	})
+	m[makeSymbol("map?")] = onePred(func(v MalValue) bool {
+		_, ok := v.(*MalMap)
+		return ok
+	})
+
 	return Namespace{M: m}
 }
 
