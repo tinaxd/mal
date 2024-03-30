@@ -21,3 +21,7 @@ step6_file: src/step6_file/*.go
 
 step7_quote: src/step7_quote/*.go
 	go build -o step7_quote src/step7_quote/*.go
+
+step8_macros: src/step8_macros/*.go
+	go build -o step8_macros src/step8_macros/*.go
+	
