@@ -1,0 +1,31 @@
+(handler! GET "/" (req)
+    (text "Hello Factory!")
+)
+
+(handler! GET "/user/:username" (req (path username) (header X-Key))
+    (text
+        (str "Hello, " username " with key " X-Key)
+    )
+)
+
+(defreq! LoginRequest
+    (username string)
+    (password string)
+)
+
+(handler! POST "/login" (req (body login LoginRequest))
+    (let*
+        (
+            username (LoginRequest-username login)
+            password (LoginRequest-password login)
+            row (sql-query-single "SELECT token FROM users WHERE username=? AND password=?" username password)
+        )
+        (cond
+            (empty? row) (text "user not found" {:status 404})
+            true (text
+                (str "Your token is " (sql-get row "token"))
+                {:status 200}
+            )
+        )
+    )
+)
