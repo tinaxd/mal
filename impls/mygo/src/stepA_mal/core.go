@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
@@ -560,7 +561,9 @@ func DefaultNamespace() Namespace {
 	})
 
 	m[makeSymbol("time-ms")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		return MalInt{Value: 0}, nil
+		// get unixtime
+		unix := time.Now().UnixMilli()
+		return MalInt{Value: unix}, nil
 	})
 	m[makeSymbol("meta")] = makeFunc(func(args []MalValue) (MalValue, error) {
 		return MalInt{Value: 0}, nil
@@ -568,20 +571,56 @@ func DefaultNamespace() Namespace {
 	m[makeSymbol("with-meta")] = makeFunc(func(args []MalValue) (MalValue, error) {
 		return MalInt{Value: 0}, nil
 	})
-	m[makeSymbol("fn?")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		return MalInt{Value: 0}, nil
-	})
-	m[makeSymbol("string?")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		return MalInt{Value: 0}, nil
-	})
-	m[makeSymbol("number?")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		return MalInt{Value: 0}, nil
-	})
 	m[makeSymbol("seq")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		return MalInt{Value: 0}, nil
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+
+		if args[0] == nil {
+			return nil, nil
+		}
+
+		switch v := args[0].(type) {
+		case MalList:
+			if v.IsVector() {
+				return NewList(v.Values), nil
+			}
+			return v, nil
+		case MalString:
+			chars := []MalValue{}
+			for _, c := range v.Value {
+				chars = append(chars, MalString{Value: string(c)})
+			}
+			return NewList(chars), nil
+		default:
+			return nil, fmt.Errorf("expected MalList or MalString, got %v", args[0])
+		}
 	})
 	m[makeSymbol("conj")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		return MalInt{Value: 0}, nil
+		if len(args) > 2 {
+			return nil, fmt.Errorf("expected at most 2 arguments, got %d", len(args))
+		}
+		switch col := args[0].(type) {
+		case MalList:
+			if !col.IsVector() {
+				newList := col
+				for _, v := range args[1:] {
+					values := []MalValue{v}
+					values = append(values, newList.Values...)
+					newList = NewList(values)
+				}
+				return newList, nil
+			} else {
+				newVec := col
+				values := []MalValue{}
+				values = append(values, newVec.Values...)
+				values = append(values, args[1:]...)
+				newVec = NewVector(values)
+				return newVec, nil
+			}
+		default:
+			return nil, fmt.Errorf("expected MalList or MalVector, got %v", args[0])
+		}
 	})
 
 	onePred := func(f func(MalValue) bool) MalFunc {
@@ -622,6 +661,22 @@ func DefaultNamespace() Namespace {
 	m[makeSymbol("map?")] = onePred(func(v MalValue) bool {
 		_, ok := v.(*MalMap)
 		return ok
+	})
+	m[makeSymbol("fn?")] = onePred(func(v MalValue) bool {
+		f, ok := v.(MalInvoke)
+		return ok && !f.IsMacro()
+	})
+	m[makeSymbol("string?")] = onePred(func(v MalValue) bool {
+		s, ok := v.(MalString)
+		return ok && !s.IsKeyword()
+	})
+	m[makeSymbol("number?")] = onePred(func(v MalValue) bool {
+		_, ok := v.(MalInt)
+		return ok
+	})
+	m[makeSymbol("macro?")] = onePred(func(v MalValue) bool {
+		f, ok := v.(MalInvoke)
+		return ok && f.IsMacro()
 	})
 
 	return Namespace{M: m}
