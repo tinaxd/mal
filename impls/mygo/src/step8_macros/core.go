@@ -184,19 +184,27 @@ func DefaultNamespace() Namespace {
 		return MalString{Value: str}, nil
 	})
 	m[makeSymbol("prn")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		if len(args) != 1 {
-			return nil, ErrWrongFuncNArgs
+		for i, arg := range args {
+			s := PrStr(arg, true)
+
+			if i > 0 {
+				fmt.Print(" ")
+			}
+			fmt.Print(s)
 		}
-		s := PrStr(args[0], true)
-		fmt.Println(s)
+		fmt.Println()
 		return nil, nil
 	})
 	m[makeSymbol("println")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		if len(args) != 1 {
-			return nil, ErrWrongFuncNArgs
+		for i, arg := range args {
+			s := PrStr(arg, false)
+
+			if i > 0 {
+				fmt.Print(" ")
+			}
+			fmt.Print(s)
 		}
-		s := PrStr(args[0], false)
-		fmt.Println(s)
+		fmt.Println()
 		return nil, nil
 	})
 

@@ -1,5 +1,11 @@
 package main
 
+import "strings"
+
+const (
+	KeywordPrefix = "\u029e"
+)
+
 type MalValue interface {
 	MalValue()
 }
@@ -74,6 +80,23 @@ type MalString struct {
 }
 
 func (MalString) MalValue() {}
+func (s MalString) IsKeyword() bool {
+	return isKeywordString(s.Value)
+}
+func (s MalString) AsKeyword() string {
+	if !s.IsKeyword() {
+		panic("not a keyword")
+	}
+	return s.Value[len(KeywordPrefix):]
+}
+
+func isKeywordString(s string) bool {
+	return strings.HasPrefix(s, KeywordPrefix)
+}
+
+func NewKeyword(s string) MalString {
+	return MalString{Value: KeywordPrefix + s}
+}
 
 type MalAtom struct {
 	Ref MalValue

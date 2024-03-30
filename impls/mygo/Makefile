@@ -10,8 +10,8 @@ step2_eval: src/step2_eval/*.go
 step3_env: src/step3_env/*.go
 	go build -o step3_env src/step3_env/*.go
 
-step4_if_fn_do: src/step4_if_fn_do/*.go
-	go build -o step4_if_fn_do src/step4_if_fn_do/*.go
+step4_if_fn_do: src/step8_macros/*.go
+	go build -o step4_if_fn_do src/step8_macros/*.go
 
 step5_tco: src/step5_tco/*.go
 	go build -o step5_tco src/step5_tco/*.go
@@ -24,4 +24,3 @@ step7_quote: src/step7_quote/*.go
 
 step8_macros: src/step8_macros/*.go
 	go build -o step8_macros src/step8_macros/*.go
-	

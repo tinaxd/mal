@@ -33,6 +33,9 @@ func PrStr(v MalValue, readably bool) string {
 	case MalTcoFunc:
 		return "#<function>"
 	case MalString:
+		if vv.IsKeyword() {
+			return ":" + vv.AsKeyword()
+		}
 		if readably {
 			return "\"" + readableString(vv.Value) + "\""
 		} else {

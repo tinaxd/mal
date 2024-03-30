@@ -9,6 +9,11 @@ func NewEnv(outer *Env, binds []string, exprs []MalValue) *Env {
 	env := &Env{M: make(map[string]MalValue), Outer: outer}
 
 	for i, bind := range binds {
+		if bind == "&" {
+			// set the rest
+			env.Set(binds[i+1], MalList{Values: exprs[i:]})
+			break
+		}
 		env.Set(bind, exprs[i])
 	}
 

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 type Reader struct {
@@ -142,16 +141,43 @@ func (r *Reader) ReadAtom() (MalValue, error) {
 		return MalBool{Value: false}, nil
 	} else if token == "nil" {
 		return nil, nil
+	} else if token[0] == ':' {
+		substr := token[1:]
+		return NewKeyword(substr), nil
 	} else if token[0] == '"' {
 		substr := token[1 : len(token)-1]
-		// log.Printf("initial substr: %v", substr)
-		substr = strings.ReplaceAll(substr, "\\\"", "\"")
-		substr = strings.ReplaceAll(substr, "\\n", "\n")
-		// log.Printf("before substr: %v", substr)
-		substr = strings.ReplaceAll(substr, "\\\\", "\\")
-		// log.Printf("after substr: %v", substr)
+		substr = readString(substr)
 		return MalString{Value: substr}, nil
 	} else {
 		return MalSymbol{Value: token}, nil
 	}
+}
+
+func readString(s string) string {
+	result := ""
+	backslash := false
+	for _, ch := range s {
+		if !backslash {
+			if ch == '\\' {
+				backslash = true
+			} else {
+				result += string(ch)
+			}
+			continue
+		}
+
+		switch ch {
+		case '\\':
+			result += "\\"
+		case 'n':
+			result += "\n"
+		case '"':
+			result += "\""
+		default:
+			panic("unsupported escape character")
+		}
+		backslash = false
+	}
+
+	return result
 }
