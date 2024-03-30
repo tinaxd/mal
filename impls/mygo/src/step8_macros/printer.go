@@ -42,14 +42,27 @@ func PrStr(v MalValue, readably bool) string {
 			return vv.Value
 		}
 	case MalList:
-		str := "("
+		var str string
+
+		if vv.IsVector() {
+			str += "["
+		} else {
+			str += "("
+		}
+
 		for i, value := range vv.Values {
 			if i != 0 {
 				str += " "
 			}
 			str += PrStr(value, readably)
 		}
-		str += ")"
+
+		if vv.IsVector() {
+			str += "]"
+		} else {
+			str += ")"
+		}
+
 		return str
 	case *MalAtom:
 		var v MalValue

@@ -36,6 +36,10 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 	for {
 		switch p := param.(type) {
 		case MalList:
+			if p.IsVector() {
+				return EvalAst(param, replEnv, env)
+			}
+
 			if len(p.Values) == 0 {
 				return param, nil
 			}
@@ -245,6 +249,8 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 				param = f.Ast
 				env = NewEnv(f.Env, f.Params, args)
 				continue
+			default:
+				return nil, fmt.Errorf("not a function: %v", head)
 			}
 		default:
 			return EvalAst(param, replEnv, env)

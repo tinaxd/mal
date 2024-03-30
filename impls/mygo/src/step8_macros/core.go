@@ -75,8 +75,8 @@ func DefaultNamespace() Namespace {
 		if args[0] == nil {
 			return MalBool{Value: true}, nil
 		}
-		_, ok := args[0].(MalList)
-		return MalBool{Value: ok}, nil
+		lst, ok := args[0].(MalList)
+		return MalBool{Value: ok && !lst.IsVector()}, nil
 	})
 	m[makeSymbol("empty?")] = makeFunc(func(args []MalValue) (MalValue, error) {
 		if len(args) != 1 {

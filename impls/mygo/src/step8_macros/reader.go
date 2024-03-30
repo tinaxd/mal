@@ -67,7 +67,9 @@ func (r *Reader) ReadForm() (MalValue, error) {
 		return nil, err
 	}
 	if peek == "(" {
-		return r.ReadList()
+		return r.ReadList(false)
+	} else if peek == "[" {
+		return r.ReadList(true)
 	} else if peek == "'" {
 		r.Next() // consume "'"
 		form, err := r.ReadForm()
@@ -101,7 +103,7 @@ func (r *Reader) ReadForm() (MalValue, error) {
 	}
 }
 
-func (r *Reader) ReadList() (MalValue, error) {
+func (r *Reader) ReadList(isVector bool) (MalValue, error) {
 	r.Next() // consume "("
 	values := []MalValue{}
 	for {
@@ -110,7 +112,17 @@ func (r *Reader) ReadList() (MalValue, error) {
 			return nil, err
 		}
 		if peek == ")" {
+			if isVector {
+				return nil, errors.New("unexpected `)`")
+			}
 			r.Next() // consume ")"
+			break
+		}
+		if peek == "]" {
+			if !isVector {
+				return nil, errors.New("unexpected `]`")
+			}
+			r.Next() // consume "]"
 			break
 		}
 		form, err := r.ReadForm()
@@ -120,7 +132,11 @@ func (r *Reader) ReadList() (MalValue, error) {
 		values = append(values, form)
 	}
 
-	return MalList{Values: values}, nil
+	if isVector {
+		return NewVector(values), nil
+	} else {
+		return NewList(values), nil
+	}
 }
 
 func (r *Reader) ReadAtom() (MalValue, error) {

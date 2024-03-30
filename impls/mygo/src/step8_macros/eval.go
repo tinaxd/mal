@@ -32,7 +32,7 @@ func EvalAst(ast MalValue, replEnv *Env, env *Env) (MalValue, error) {
 			}
 			vals[i] = val
 		}
-		return MalList{Values: vals}, nil
+		return MalList{Values: vals, Vector: a.Vector}, nil
 	default:
 		return ast, nil
 	}

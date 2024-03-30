@@ -25,9 +25,19 @@ const (
 
 type MalList struct {
 	Values []MalValue
+	Vector bool
 }
 
 func (MalList) MalValue() {}
+func (m MalList) IsVector() bool {
+	return m.Vector
+}
+func NewList(values []MalValue) MalList {
+	return MalList{Values: values}
+}
+func NewVector(values []MalValue) MalList {
+	return MalList{Values: values, Vector: true}
+}
 
 type MalInt struct {
 	Value int64
