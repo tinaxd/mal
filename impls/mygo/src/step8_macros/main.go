@@ -285,6 +285,28 @@ func main() {
 	rep("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\nnil)\")))))", env)
 	rep("(def! not (fn* (a) (if a false true)))", env)
 
+	if len(os.Args) > 1 {
+		filename := os.Args[1]
+		args := os.Args[2:]
+
+		argValues := make([]MalValue, len(args))
+		for i, arg := range args {
+			argValues[i] = MalString{Value: arg}
+		}
+		argList := NewList(argValues)
+		env.Set("*ARGV*", argList)
+
+		_, err := rep("(load-file \""+filename+"\")", env)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
+	// empty *ARGV*
+	env.Set("*ARGV*", NewList(nil))
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		prompt := "user> "

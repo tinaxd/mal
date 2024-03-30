@@ -112,6 +112,15 @@ func (r *Reader) ReadForm() (MalValue, error) {
 			return nil, err
 		}
 		return MalList{Values: []MalValue{makeSymbol("splice-unquote"), form}}, nil
+	} else if peek == "@" {
+		r.Next() // consume "@"
+		form, err := r.ReadForm()
+		if err != nil {
+			return nil, err
+		}
+		return NewList([]MalValue{
+			makeSymbol("deref"), form,
+		}), nil
 	} else {
 		return r.ReadAtom()
 	}
