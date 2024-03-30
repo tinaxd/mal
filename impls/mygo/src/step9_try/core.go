@@ -424,6 +424,22 @@ func DefaultNamespace() Namespace {
 		return NewVector(values), nil
 	})
 
+	m[makeSymbol("vec")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+
+		switch v := args[0].(type) {
+		case MalList:
+			if v.IsVector() {
+				return v, nil
+			}
+			return NewVector(v.Values), nil
+		default:
+			return nil, fmt.Errorf("expected MalList, got %v", args[0])
+		}
+	})
+
 	m[makeSymbol("hash-map")] = makeFunc(func(args []MalValue) (MalValue, error) {
 		if len(args)%2 != 0 {
 			return nil, fmt.Errorf("expected even number of arguments, got %d", len(args))
@@ -570,12 +586,26 @@ func DefaultNamespace() Namespace {
 	return Namespace{M: m}
 }
 
-func quasiquote(ast MalValue) (MalValue, error) {
+func quasiquote(ast MalValue, ignoreUnquote bool) (MalValue, error) {
 	switch q := ast.(type) {
 	case MalList:
+		if q.IsVector() {
+			asList := NewList(q.Values)
+			qq, err := quasiquote(asList, true)
+			if err != nil {
+				return nil, err
+			}
+			return MalList{
+				Values: []MalValue{
+					makeSymbol("vec"),
+					qq,
+				},
+			}, nil
+		}
+
 		if len(q.Values) > 0 {
 			sym, ok := q.Values[0].(MalSymbol)
-			if ok && sym.Value == "unquote" {
+			if !ignoreUnquote && ok && sym.Value == "unquote" {
 				if len(q.Values) != 2 {
 					return nil, fmt.Errorf("wrong number of arguments for unquote")
 				}
@@ -605,7 +635,7 @@ func quasiquote(ast MalValue) (MalValue, error) {
 						}
 					}
 				}
-				eltQuasi, err := quasiquote(elt)
+				eltQuasi, err := quasiquote(elt, false)
 				if err != nil {
 					return nil, err
 				}
@@ -622,6 +652,13 @@ func quasiquote(ast MalValue) (MalValue, error) {
 			return result, nil
 		}
 	case MalSymbol:
+		return MalList{
+			Values: []MalValue{
+				makeSymbol("quote"),
+				ast,
+			},
+		}, nil
+	case *MalMap:
 		return MalList{
 			Values: []MalValue{
 				makeSymbol("quote"),

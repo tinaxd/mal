@@ -268,12 +268,12 @@ func eval(param MalValue, replEnv *Env, env *Env) (MalValue, error) {
 					if len(rawArgs) != 1 {
 						return nil, fmt.Errorf("wrong number of arguments for quasiquoteexpand")
 					}
-					return quasiquote(rawArgs[0])
+					return quasiquote(rawArgs[0], false)
 				case "quasiquote":
 					if len(rawArgs) != 1 {
 						return nil, fmt.Errorf("wrong number of arguments for quasiquote")
 					}
-					q, err := quasiquote(rawArgs[0])
+					q, err := quasiquote(rawArgs[0], false)
 					if err != nil {
 						return nil, err
 					}
