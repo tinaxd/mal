@@ -29,6 +29,7 @@ const (
 type MalList struct {
 	Values []MalValue
 	Vector bool
+	Meta   MalValue // nil by default
 }
 
 func (MalList) MalValue() {}
@@ -57,6 +58,7 @@ func (MalSymbol) MalValue() {}
 type MalFunc struct {
 	F     func([]MalValue) (MalValue, error)
 	Macro bool
+	Meta  MalValue // nil by default
 }
 
 func (MalFunc) MalValue() {}
@@ -135,6 +137,7 @@ type MalMapEntry struct {
 
 type MalMap struct {
 	values []MalMapEntry
+	meta   MalValue
 }
 
 func (*MalMap) MalValue() {}
@@ -173,6 +176,14 @@ func (m *MalMap) Del(key MalValue) {
 
 func (m *MalMap) Iter() []MalMapEntry {
 	return m.values
+}
+
+func (m *MalMap) GetMeta() MalValue {
+	return m.meta
+}
+
+func (m *MalMap) SetMeta(meta MalValue) {
+	m.meta = meta
 }
 
 func CloneMap(m *MalMap) *MalMap {

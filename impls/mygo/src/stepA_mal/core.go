@@ -582,11 +582,17 @@ func DefaultNamespace() Namespace {
 
 		switch v := args[0].(type) {
 		case MalList:
+			if len(v.Values) == 0 {
+				return nil, nil
+			}
 			if v.IsVector() {
 				return NewList(v.Values), nil
 			}
 			return v, nil
 		case MalString:
+			if len(v.Value) == 0 {
+				return nil, nil
+			}
 			chars := []MalValue{}
 			for _, c := range v.Value {
 				chars = append(chars, MalString{Value: string(c)})
@@ -597,8 +603,8 @@ func DefaultNamespace() Namespace {
 		}
 	})
 	m[makeSymbol("conj")] = makeFunc(func(args []MalValue) (MalValue, error) {
-		if len(args) > 2 {
-			return nil, fmt.Errorf("expected at most 2 arguments, got %d", len(args))
+		if len(args) < 2 {
+			return nil, fmt.Errorf("expected at least 2 arguments, got %d", len(args))
 		}
 		switch col := args[0].(type) {
 		case MalList:
@@ -620,6 +626,56 @@ func DefaultNamespace() Namespace {
 			}
 		default:
 			return nil, fmt.Errorf("expected MalList or MalVector, got %v", args[0])
+		}
+	})
+
+	m[makeSymbol("meta")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+
+		switch v := args[0].(type) {
+		case MalList:
+			return v.Meta, nil
+		case *MalMap:
+			return v.GetMeta(), nil
+		case MalFunc:
+			return v.Meta, nil
+		case MalTcoFunc:
+			return v.Fn.Meta, nil
+		default:
+			return nil, fmt.Errorf("expected MalList, MalMap, MalFunc, or MalTcoFunc, got %v", args[0])
+		}
+	})
+
+	m[makeSymbol("with-meta")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		meta := args[1]
+
+		switch v := args[0].(type) {
+		case MalList:
+			copied := MalList{Values: v.Values, Vector: v.Vector}
+			copied.Meta = meta
+			return copied, nil
+		case *MalMap:
+			copied := CloneMap(v)
+			copied.SetMeta(meta)
+			return copied, nil
+		case MalFunc:
+			copied := MalFunc{F: v.F, Macro: v.Macro, Meta: meta}
+			return copied, nil
+		case MalTcoFunc:
+			fnCopied := MalFunc{
+				F: v.Fn.F, Macro: v.Fn.Macro, Meta: meta,
+			}
+			copied := MalTcoFunc{
+				Ast: v.Ast, Params: v.Params, Env: v.Env, Fn: fnCopied,
+			}
+			return copied, nil
+		default:
+			return nil, fmt.Errorf("expected MalList, MalMap, MalFunc, or MalTcoFunc, got %v", args[0])
 		}
 	})
 

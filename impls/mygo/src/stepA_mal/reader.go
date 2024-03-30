@@ -86,6 +86,19 @@ func (r *Reader) ReadForm() (MalValue, error) {
 		return r.ReadList(ListTypeVector)
 	} else if peek == "{" {
 		return r.ReadList(ListTypeMap)
+	} else if peek == "^" {
+		r.Next() // consume "^"
+		meta, err := r.ReadForm()
+		if err != nil {
+			return nil, err
+		}
+		form, err := r.ReadForm()
+		if err != nil {
+			return nil, err
+		}
+		return NewList([]MalValue{
+			makeSymbol("with-meta"), form, meta,
+		}), nil
 	} else if peek == "'" {
 		r.Next() // consume "'"
 		form, err := r.ReadForm()
