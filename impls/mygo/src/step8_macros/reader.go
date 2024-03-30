@@ -161,15 +161,24 @@ func (r *Reader) ReadAtom() (MalValue, error) {
 		substr := token[1:]
 		return NewKeyword(substr), nil
 	} else if token[0] == '"' {
+		if len(token) == 1 {
+			return nil, errors.New("unexpected EOF")
+		}
+		if token[len(token)-1] != '"' {
+			return nil, errors.New("unexpected EOF")
+		}
 		substr := token[1 : len(token)-1]
-		substr = readString(substr)
+		substr, err := readString(substr)
+		if err != nil {
+			return nil, err
+		}
 		return MalString{Value: substr}, nil
 	} else {
 		return MalSymbol{Value: token}, nil
 	}
 }
 
-func readString(s string) string {
+func readString(s string) (string, error) {
 	result := ""
 	backslash := false
 	for _, ch := range s {
@@ -195,5 +204,9 @@ func readString(s string) string {
 		backslash = false
 	}
 
-	return result
+	if backslash {
+		return "", errors.New("unexpected EOF")
+	}
+
+	return result, nil
 }

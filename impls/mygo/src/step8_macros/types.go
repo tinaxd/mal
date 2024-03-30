@@ -97,7 +97,7 @@ func (s MalString) AsKeyword() string {
 	if !s.IsKeyword() {
 		panic("not a keyword")
 	}
-	return s.Value[len(KeywordPrefix):]
+	return strings.TrimPrefix(s.Value, KeywordPrefix)
 }
 
 func isKeywordString(s string) bool {
