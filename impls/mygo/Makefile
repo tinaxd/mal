@@ -18,3 +18,6 @@ step5_tco: src/step5_tco/*.go
 
 step6_file: src/step6_file/*.go
 	go build -o step6_file src/step6_file/*.go
+
+step7_quote: src/step7_quote/*.go
+	go build -o step7_quote src/step7_quote/*.go
