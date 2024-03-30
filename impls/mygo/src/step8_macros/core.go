@@ -281,6 +281,49 @@ func DefaultNamespace() Namespace {
 		}
 		return MalList{Values: values}, nil
 	})
+	m[makeSymbol("nth")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 2 {
+			return nil, ErrWrongFuncNArgs
+		}
+		l, ok := args[0].(MalList)
+		if !ok {
+			return nil, fmt.Errorf("expected MalList, got %v", args[0])
+		}
+		i, ok := args[1].(MalInt)
+		if !ok {
+			return nil, fmt.Errorf("expected MalInt, got %v", args[1])
+		}
+		if i.Value < 0 || i.Value >= int64(len(l.Values)) {
+			return nil, fmt.Errorf("index out of range: %d", i.Value)
+		}
+		return l.Values[i.Value], nil
+	})
+	m[makeSymbol("first")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		l, ok := args[0].(MalList)
+		if !ok {
+			return nil, fmt.Errorf("expected MalList, got %v", args[0])
+		}
+		if len(l.Values) == 0 {
+			return nil, nil
+		}
+		return l.Values[0], nil
+	})
+	m[makeSymbol("rest")] = makeFunc(func(args []MalValue) (MalValue, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongFuncNArgs
+		}
+		l, ok := args[0].(MalList)
+		if !ok {
+			return nil, fmt.Errorf("expected MalList, got %v", args[0])
+		}
+		if len(l.Values) == 0 {
+			return MalList{Values: []MalValue{}}, nil
+		}
+		return MalList{Values: l.Values[1:]}, nil
+	})
 
 	return Namespace{M: m}
 }
