@@ -27,3 +27,7 @@ step8_macros: src/step8_macros/*.go
 
 step9_try: src/step9_try/*.go
 	go build -o step9_try src/step9_try/*.go
+
+stepA_mal: src/stepA_mal/*.go
+	go build -o stepA_mal src/stepA_mal/*.go
+	
