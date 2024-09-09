@@ -1,19 +1,13 @@
 #include <iostream>
 #include <string>
+#include "read.h"
+#include "printer.h"
 
-std::string READ(const std::string &line)
-{
-    return line;
-}
+using namespace factory;
 
-std::string EVAL(const std::string &read)
+FPointer<FactoryValue> EVAL(FPointer<FactoryValue> read)
 {
     return read;
-}
-
-std::string PRINT(const std::string &eval)
-{
-    return eval;
 }
 
 std::string rep(const std::string &line)
