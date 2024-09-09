@@ -1,4 +1,5 @@
 const std = @import("std");
+const READ = @import("./reader.zig").READ;
 
 pub fn main() !void {
     const stdout_file = std.io.getStdOut().writer();
@@ -22,10 +23,6 @@ pub fn main() !void {
             break;
         }
     }
-}
-
-fn READ(s: []u8) []u8 {
-    return s;
 }
 
 fn EVAL(s: []u8) []u8 {
