@@ -89,7 +89,7 @@ FPointer<FactoryValue> read_list(Reader &reader)
         const auto value = read_form(reader);
         if (value == f_null<FactoryValue>)
         {
-            throw std::runtime_error("unexpected EOF while reading");
+            throw UnexpectedEOFError();
         }
         list->append(value);
     }

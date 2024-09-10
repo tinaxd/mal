@@ -2,15 +2,12 @@
 #include <string>
 #include "read.h"
 #include "printer.h"
+#include "env.h"
+#include "eval.h"
 
 using namespace factory;
 
-FPointer<FactoryValue> EVAL(FPointer<FactoryValue> read)
-{
-    return read;
-}
-
-std::string rep(const std::string &line)
+std::string rep(const std::string &line, Env &env)
 {
     const auto read = READ(line);
     const auto eval = EVAL(read);
@@ -21,6 +18,8 @@ std::string rep(const std::string &line)
 int main()
 {
 
+    Env env;
+
     while (true)
     {
         std::cout << "user> ";
@@ -30,7 +29,14 @@ int main()
         {
             break;
         }
-        std::cout << rep(line) << std::endl;
+        try
+        {
+            std::cout << rep(line, env) << std::endl;
+        }
+        catch (const UnexpectedEOFError &e)
+        {
+            std::cout << "Unexpected EOF" << std::endl;
+        }
     }
     return 0;
 }

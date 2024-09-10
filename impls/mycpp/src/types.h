@@ -12,6 +12,10 @@ namespace factory
     {
     public:
         virtual std::string printString() = 0;
+
+        virtual inline bool isList() { return false; }
+        virtual inline bool isInt() { return false; }
+        virtual inline bool isSymbol() { return false; }
     };
 
     class FactoryList : public FactoryValue
@@ -23,6 +27,8 @@ namespace factory
         FactoryList();
         void append(FPointer<FactoryValue> value);
         std::string printString() override;
+
+        inline bool isList() override { return true; }
     };
 
     class FactoryInt : public FactoryValue
@@ -33,6 +39,8 @@ namespace factory
     public:
         FactoryInt(int64_t value);
         std::string printString() override;
+
+        inline bool isInt() override { return true; }
     };
 
     class FactorySymbol : public FactoryValue
@@ -43,6 +51,9 @@ namespace factory
     public:
         FactorySymbol(std::string value);
         std::string printString() override;
+
+        inline bool isSymbol() override { return true; }
+        inline std::string getValue() { return this->value; }
     };
 
     FPointer<FactoryList> make_factory_list();
