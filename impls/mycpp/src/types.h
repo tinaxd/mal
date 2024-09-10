@@ -13,9 +13,9 @@ namespace factory
     public:
         virtual std::string printString() = 0;
 
-        virtual inline bool isList() { return false; }
-        virtual inline bool isInt() { return false; }
-        virtual inline bool isSymbol() { return false; }
+        virtual inline bool isList() const { return false; }
+        virtual inline bool isInt() const { return false; }
+        virtual inline bool isSymbol() const { return false; }
     };
 
     class FactoryList : public FactoryValue
@@ -28,7 +28,11 @@ namespace factory
         void append(FPointer<FactoryValue> value);
         std::string printString() override;
 
-        inline bool isList() override { return true; }
+        inline bool isList() const override { return true; }
+
+        size_t size() const;
+        FPointer<FactoryValue> &operator[](size_t index);
+        const FPointer<FactoryValue> &operator[](size_t index) const;
     };
 
     class FactoryInt : public FactoryValue
@@ -40,7 +44,7 @@ namespace factory
         FactoryInt(int64_t value);
         std::string printString() override;
 
-        inline bool isInt() override { return true; }
+        inline bool isInt() const override { return true; }
     };
 
     class FactorySymbol : public FactoryValue
@@ -52,7 +56,7 @@ namespace factory
         FactorySymbol(std::string value);
         std::string printString() override;
 
-        inline bool isSymbol() override { return true; }
+        inline bool isSymbol() const override { return true; }
         inline std::string getValue() { return this->value; }
     };
 
@@ -62,4 +66,10 @@ namespace factory
     template <typename T>
     FPointer<T> f_null = nullptr;
     // FPointer<FactoryValue
+
+    template <typename T>
+    FPointer<T> f_ptr_cast(FPointer<FactoryValue> value)
+    {
+        return static_cast<FPointer<T>>(value);
+    }
 }
